@@ -42,7 +42,7 @@ server.get("/api/users/:id", (req, res) => {
         if(found) {
             res.status(200).json(found);
         } else {
-            res.status(404).json({ message: "The user with the specified ID does not exist." })
+            res.status(404).json({ errorMessage: "The user with the specified ID does not exist." })
         }
 
     }   
@@ -88,10 +88,10 @@ server.delete("/api/users/:id", (req, res) => {
         const found = users.find(user => user.id === userId);
 
         if(found) {
-            const removed = users.splice(users.indexOf(found), 1);
+            const removed = users.splice(users.indexOf(found), 1)[0];
             res.status(200).json({users: users, removed: removed});
         } else {
-            res.status(404).json({ message: "The user with the specified ID does not exist." })
+            res.status(404).json({ errorMessage: "The user with the specified ID does not exist." })
         }
 
     }   
@@ -125,7 +125,7 @@ server.put("/api/users/:id", (req, res) => {
 
             res.status(200).json(users);
         } else {
-            res.status(404).json({ message: "The user with the specified ID does not exist." })
+            res.status(404).json({ errorMessage: "The user with the specified ID does not exist." })
         }
 
     }   
