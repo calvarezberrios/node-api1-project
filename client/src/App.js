@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import './App.css';
+import { TextField, Button, makeStyles, Collapse } from "@material-ui/core";
+
+const useStyles = makeStyles((theme) => ({
+  formContainer: {
+    width: "250px",
+    margin: "0 auto",
+  },
+  inputFields: {
+    width: "100%",
+    margin: theme.spacing(1),
+    background: "#fff",
+  },
+  formButtons: {
+    '& > *': {
+      margin: theme.spacing(1),
+    },
+  },
+}));
 
 const initialValues = {
   name: "",
@@ -8,9 +26,11 @@ const initialValues = {
 }
 
 function App() {
+  const classes = useStyles();
   const [users, setUsers] = useState([]);
   const [values, setValues] = useState(initialValues);
   const [isEditing, setIsEditing] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const handleChange = e => {
     setValues({
@@ -28,6 +48,7 @@ function App() {
         .then(res => {
           setUsers(res.data);
           setValues(initialValues);
+          setShowForm(false);
         })
         .catch(err => {
           console.log(err.response.data.errorMessage, err.response.status);
@@ -41,6 +62,7 @@ function App() {
             setUsers(res.data);
             setValues(initialValues);
             setIsEditing(false);
+            setShowForm(false);
           })
           .catch(err => {
             console.log(err.response.data.errorMessage, err.response.status);
@@ -57,6 +79,7 @@ function App() {
       .then(res => {
         setUsers(res.data.users);
         setValues(res.data.removed);
+        setShowForm(true);
       })
       .catch(err => {
         console.log(err.response.data.errorMessage, err.response.status);
@@ -69,6 +92,15 @@ function App() {
   const edit = user => {
     setValues(user);
     setIsEditing(true);
+    setShowForm(true);
+  }
+
+  const cancelForm = e => {
+    e.preventDefault();
+
+    setValues(initialValues);
+    setIsEditing(false);
+    setShowForm(false);
   }
 
   useEffect(() => {
@@ -84,6 +116,21 @@ function App() {
   return (
     <div className="App">
       <h1>My Users API (My Very First API)</h1>
+
+      <Button variant = "contained" onClick = {() => setShowForm(!showForm)}>{!showForm ? "Add User" : "Close Form"}</Button>
+      <Collapse in = {showForm} timeout = "auto" unmountOnExit>
+        <form className = {classes.formContainer} onSubmit = {handleSubmit} autoComplete = "off">
+          <TextField variant = "outlined" className = {classes.inputFields} id = "nameInput" type = "text" name = "name" value = {values.name} onChange = {handleChange} label = "User's Name" />
+          <TextField variant = "outlined" className = {classes.inputFields} multiline rows = {4} id = "bioInput" name = "bio" value = {values.bio} onChange = {handleChange} label = "User's Bio" />
+          
+          <div className = {classes.formButtons}>
+            <Button variant = "contained" type = "submit">{isEditing ? "Save Edit" : "Add User"}</Button>
+            <Button variant = "contained" onClick = {cancelForm}>Cancel</Button>
+          </div>
+        </form>
+
+      </Collapse>
+
       <div className = "users-container">
         {users.map(user => {
           return (
@@ -97,11 +144,7 @@ function App() {
         })}
       </div>
 
-      <form onSubmit = {handleSubmit}>
-        <input type = "text" name = "name" value = {values.name} onChange = {handleChange} placeholder = "User's Name" /><br />
-        <textarea name = "bio" value = {values.bio} onChange = {handleChange} placeholder = "User's Bio" /><br />
-        <button>Submit</button><br />
-      </form>
+      
     </div>
   );
 }
