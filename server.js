@@ -1,15 +1,14 @@
 const express = require("express");
 const shortid = require("shortid");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 
 const port = 5000;
 const server = express();
 
-server.use(bodyParser.json());
+server.use(express.json());
 server.use(cors());
 
-const users = [
+let users = [
     {
         id: "PBa4Er2", // hint: use the shortid npm package to generate it
         name: "Jane Doe", // String, required
@@ -31,20 +30,16 @@ server.get("/api/users", (req, res) => {
 });
 
 server.get("/api/users/:id", (req, res) => {
-    if(!req.params.id) {
-        res.status(400).json({ errorMessage: "Missing user id on url." });
-    }
-    const userId = req.params.id;
+    const id = req.params.id;
 
     try {
-        const found = users.find(user => user.id === userId);
+        const found = users.find(user => user.id === id);
 
         if(found) {
             res.status(200).json(found);
         } else {
             res.status(404).json({ errorMessage: "The user with the specified ID does not exist." })
         }
-
     }   
     catch {
         res.status(500).json({ errorMessage: "The user information could not be retrieved." });
@@ -53,7 +48,9 @@ server.get("/api/users/:id", (req, res) => {
 });
 
 server.post("/api/users", (req, res) => {
-    if(!(req.body.name || req.body.bio)) {
+    const newUser = req.body;
+
+    if(!(newUser.name || newUser.bio)) {
         res.status(400).json({ errorMessage: "Please provide name and bio for the user." });
     }
 
@@ -61,12 +58,9 @@ server.post("/api/users", (req, res) => {
         const itExists = users.find(user => user.name === req.body.name);
 
         if(!itExists) {
-            const newUser = {
-                ...req.body,
-                id: shortid.generate()
-            }
+            newUser.id = shortid.generate();
             users.push(newUser);
-            res.status(201).json(users);
+            res.status(201).json(newUser);
         } else {
             res.status(400).json({ errorMessage: "A user with that name already exists!" });
         }
@@ -79,21 +73,16 @@ server.post("/api/users", (req, res) => {
 
 
 server.delete("/api/users/:id", (req, res) => {
-    if(!req.params.id) {
-        res.status(400).json({ errorMessage: "Missing user id on url." });
-    }
-    const userId = req.params.id;
+    const id = req.params.id;
+    const found = users.find(user => user.id === id);
 
     try {
-        const found = users.find(user => user.id === userId);
-
         if(found) {
-            const removed = users.splice(users.indexOf(found), 1)[0];
-            res.status(200).json({users: users, removed: removed});
+            users = users.filter(user => user !== found);
+            res.status(200).json(found);
         } else {
             res.status(404).json({ errorMessage: "The user with the specified ID does not exist." })
         }
-
     }   
     catch {
         res.status(500).json({ errorMessage: "The user could not be removed" });
@@ -101,33 +90,23 @@ server.delete("/api/users/:id", (req, res) => {
 });
 
 server.put("/api/users/:id", (req, res) => {
-    if(!req.params.id) {
-        res.status(400).json({ errorMessage: "Missing user id on url." });
-    }
+    const id = req.params.id;
+    const changes = req.body;
+    changes.id = id;
 
-    const userId = req.params.id;
-
-    if(!(req.body.name || req.body.bio)) {
+    if(!(changes.name || changes.bio)) {
         res.status(400).json({ errorMessage: "Please provide name and bio for the user." });
     }
 
-    try {
-        
-        const found = users.find(user => user.id === userId);
+    try {        
+        const index = users.findIndex(user => user.id === id);
 
-        if(found) {
-            
-            users[users.indexOf(found)] = {
-                ...users[users.indexOf(found)],
-                name: req.body.name,
-                bio: req.body.bio
-            } 
-
-            res.status(200).json(users);
+        if(id !== -1) {            
+            users[index] = changes;
+            res.status(200).json(changes);
         } else {
             res.status(404).json({ errorMessage: "The user with the specified ID does not exist." })
         }
-
     }   
     catch {
         res.status(500).json({ errorMessage: "The user information could not be modified." });
@@ -135,4 +114,4 @@ server.put("/api/users/:id", (req, res) => {
 });
 
 
-server.listen(port, () => console.log(`Server listening on port: ${port}`))
+server.listen(port, () => console.log(`Server listening on port: ${port}`));

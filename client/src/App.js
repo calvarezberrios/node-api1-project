@@ -46,29 +46,28 @@ function App() {
       if(!isEditing) {
       axios.post("http://localhost:5000/api/users", values)
         .then(res => {
-          setUsers(res.data);
+          setUsers([...users, res.data]);
           setValues(initialValues);
           setShowForm(false);
         })
         .catch(err => {
-          console.log(err.response.data.errorMessage, err.response.status);
-          if(err.response.data.errorMessage) {
-            alert(err.response.data.errorMessage);
-          }
+          console.log(err.response, err.message);
         });
       } else {
         axios.put(`http://localhost:5000/api/users/${values.id}`, values)
           .then(res => {
-            setUsers(res.data);
+            setUsers(users.map(user => {
+              if(user.id === res.data.id) {
+                return res.data;
+              }
+              return user;
+            }));
             setValues(initialValues);
             setIsEditing(false);
             setShowForm(false);
           })
           .catch(err => {
-            console.log(err.response.data.errorMessage, err.response.status);
-            if(err.response.data.errorMessage) {
-              alert(err.response.data.errorMessage);
-            }
+            console.log(err.response, err.message);
           });
       }
     }
@@ -77,15 +76,11 @@ function App() {
   const remove = user => {
     axios.delete(`http://localhost:5000/api/users/${user.id}`)
       .then(res => {
-        setUsers(res.data.users);
-        setValues(res.data.removed);
-        setShowForm(true);
+        setUsers(users.filter(user => user !== res.data));
+        getUsers();
       })
       .catch(err => {
-        console.log(err.response.data.errorMessage, err.response.status);
-        if(err.response.data.errorMessage) {
-          alert(err.response.data.errorMessage);
-        }
+        console.log(err.response, err.message);
       });
   }
 
@@ -104,6 +99,10 @@ function App() {
   }
 
   useEffect(() => {
+    getUsers();
+  }, []);
+
+  const getUsers = () => {
     axios.get("http://localhost:5000/api/users")
       .then(res => {
         setUsers(res.data);
@@ -111,7 +110,7 @@ function App() {
       .catch(err => {
         console.log(err.response.data, err.message);
       });
-  }, []);
+  }
 
   return (
     <div className="App">
