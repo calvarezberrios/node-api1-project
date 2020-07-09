@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import './App.css';
 import { TextField, Button, makeStyles, Collapse } from "@material-ui/core";
+import { red } from '@material-ui/core/colors';
 
 const useStyles = makeStyles((theme) => ({
   formContainer: {
@@ -31,6 +32,7 @@ function App() {
   const [values, setValues] = useState(initialValues);
   const [isEditing, setIsEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState(null)
 
   const handleChange = e => {
     setValues({
@@ -42,16 +44,17 @@ function App() {
   const handleSubmit = e => {
     e.preventDefault();
 
-    if(values.name && values.bio) {
       if(!isEditing) {
       axios.post("http://localhost:5000/api/users", values)
         .then(res => {
           setUsers([...users, res.data]);
           setValues(initialValues);
           setShowForm(false);
+          setError(null);
         })
         .catch(err => {
-          console.log(err.response, err.message);
+          if(err.response.data.errorMessage) setError(err.response.data);
+          else setError({errorMessage: err.message});
         });
       } else {
         axios.put(`http://localhost:5000/api/users/${values.id}`, values)
@@ -65,12 +68,13 @@ function App() {
             setValues(initialValues);
             setIsEditing(false);
             setShowForm(false);
+            setError(null);
           })
           .catch(err => {
-            console.log(err.response, err.message);
+            if(err.response.data.errorMessage) setError(err.response.data);
+            else setError({errorMessage: err.message});
           });
       }
-    }
   }
 
   const remove = user => {
@@ -78,9 +82,11 @@ function App() {
       .then(res => {
         setUsers(users.filter(user => user !== res.data));
         getUsers();
+        setError(null);
       })
       .catch(err => {
-        console.log(err.response, err.message);
+        if(err.response.data.errorMessage) setError(err.response.data);
+        else setError({errorMessage: err.message});
       });
   }
 
@@ -96,6 +102,7 @@ function App() {
     setValues(initialValues);
     setIsEditing(false);
     setShowForm(false);
+    setError(null);
   }
 
   useEffect(() => {
@@ -106,9 +113,11 @@ function App() {
     axios.get("http://localhost:5000/api/users")
       .then(res => {
         setUsers(res.data);
+        setError(null);
       })
       .catch(err => {
-        console.log(err.response.data, err.message);
+        if(err.response.data.errorMessage) setError(err.response.data);
+        else setError({errorMessage: err.message})
       });
   }
 
@@ -131,7 +140,7 @@ function App() {
       </Collapse>
 
       <div className = "users-container">
-        {users.map(user => {
+        {users.length > 0 && users.map(user => {
           return (
             <div key = {user.id} className = "user-card">
               <h3>{user.name}</h3>
@@ -141,8 +150,12 @@ function App() {
             </div>
           );
         })}
+        {
+          users.length === 0 && <h3>Loading user cards...</h3>
+        }
+        
       </div>
-
+      {error && <p style = {{color: "red", fontSize: 11}}>{error.errorMessage}</p>}
       
     </div>
   );
